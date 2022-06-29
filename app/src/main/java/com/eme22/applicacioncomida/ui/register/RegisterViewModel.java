@@ -47,7 +47,7 @@ public class RegisterViewModel extends ViewModel {
             public void onResponse(Call<Login> call, Response<Login> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().getCount() != null) {
                     int count = response.body().getCount();
-                    Call<User> response2 =  service.uploadUser(name, lastName, username, toBase64(password), address, phone, count != 0,
+                    Call<User> response2 =  service.uploadUser(name, lastName, username, toBase64(password), address, phone, count == 0,
                             file == null ? null : MultipartBody.Part.createFormData("data", file.getName(),
                                     RequestBody.create(file, MediaType.parse("image/*"))
                             ));

@@ -32,6 +32,10 @@ public final class Promo {
         this.discount = discount;
     }
 
+    public Promo() {
+
+    }
+
     public long getId() {
         return id;
     }
@@ -53,5 +57,25 @@ public final class Promo {
 
     public double getDiscount() {
         return discount;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setName(@Nullable String name) {
+        this.name = name;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
+    }
+
+    public void setImage(@Nullable String image) {
+        this.image = image;
+    }
+
+    public void setDiscount(double discount) {
+        this.discount = discount;
     }
 }

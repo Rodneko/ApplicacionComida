@@ -47,7 +47,7 @@ public class User implements Serializable {
     @Nullable
     private String createdAt;
 
-    public User(long id, @Nullable String email, @Nullable String passwordHash, @Nullable String firstName, @Nullable String lastName, @Nullable String address, @Nullable Long phone, boolean admin, @Nullable String image, @Nullable String createdAt) {
+    public User() {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -106,5 +106,45 @@ public class User implements Serializable {
     @Nullable
     public String getCreatedAt() {
         return createdAt;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setEmail(@Nullable String email) {
+        this.email = email;
+    }
+
+    public void setPasswordHash(@Nullable String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void setFirstName(@Nullable String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setLastName(@Nullable String lastName) {
+        this.lastName = lastName;
+    }
+
+    public void setAddress(@Nullable String address) {
+        this.address = address;
+    }
+
+    public void setPhone(@Nullable Long phone) {
+        this.phone = phone;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
+    }
+
+    public void setImage(@Nullable String image) {
+        this.image = image;
+    }
+
+    public void setCreatedAt(@Nullable String createdAt) {
+        this.createdAt = createdAt;
     }
 }

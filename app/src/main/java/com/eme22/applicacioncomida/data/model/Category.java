@@ -34,6 +34,10 @@ public final class Category {
         this.createdAt = createdAt;
     }
 
+    public Category() {
+
+    }
+
     public long getId() {
         return id;
     }
@@ -56,5 +60,25 @@ public final class Category {
     @Nullable
     public String getCreatedAt() {
         return createdAt;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setName(@Nullable String name) {
+        this.name = name;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
+    }
+
+    public void setImage(@Nullable String image) {
+        this.image = image;
+    }
+
+    public void setCreatedAt(@Nullable String createdAt) {
+        this.createdAt = createdAt;
     }
 }

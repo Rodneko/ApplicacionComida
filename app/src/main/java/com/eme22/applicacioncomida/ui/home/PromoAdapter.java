@@ -9,6 +9,7 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
 import com.eme22.applicacioncomida.R;
 import com.eme22.applicacioncomida.data.model.Promo;
@@ -67,7 +68,12 @@ public class PromoAdapter extends RecyclerView.Adapter<PromoAdapter.PromoItemVie
     @Override
     public void onBindViewHolder(@NonNull PromoItemViewHolder holder, int position) {
         Promo item = getItem(position);
-        Picasso.get().load(API_URL + item.getImage()).into(holder.image);
+
+        CircularProgressDrawable circularProgressDrawable = new CircularProgressDrawable(holder.image.getContext());
+        circularProgressDrawable.setStrokeWidth(5f);
+        circularProgressDrawable.setCenterRadius(30f);
+        circularProgressDrawable.start();
+        Picasso.get().load(API_URL + item.getImage()).placeholder(circularProgressDrawable).into(holder.image);
     }
 
     @Override

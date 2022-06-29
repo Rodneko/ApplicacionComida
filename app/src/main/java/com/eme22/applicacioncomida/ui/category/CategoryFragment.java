@@ -1,5 +1,6 @@
 package com.eme22.applicacioncomida.ui.category;
 
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -18,6 +19,8 @@ import android.view.ViewGroup;
 import com.eme22.applicacioncomida.R;
 import com.eme22.applicacioncomida.data.model.Category;
 import com.eme22.applicacioncomida.databinding.FragmentCategoryBinding;
+import com.eme22.applicacioncomida.ui.category_item.CategoryItem;
+import com.eme22.applicacioncomida.ui.user.UserFragment;
 
 import java.util.ArrayList;
 
@@ -47,32 +50,30 @@ public class CategoryFragment extends Fragment {
 
     private void initView() {
 
-        mViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
+        mViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
 
-        RecyclerView recycler = binding.categoryRecycler;
-
-        //recycler.setNestedScrollingEnabled(false);
-
-        //recycler.addItemDecoration(MarginDecoration(this))
-        //recycler.setHasFixedSize(true);
-        recycler.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+        binding.categoryRecycler.setLayoutManager(new GridLayoutManager(getActivity(), 2));
         adapter = new CategoryAdapter(
                 this::loadCategory
         );
-        recycler.setAdapter(adapter);
+        binding.categoryRecycler.setAdapter(adapter);
 
     }
 
     private void loadCategory(Category category) {
-
+        mViewModel.setSelected(category);
+        FragmentTransaction fTransaction = requireActivity().getSupportFragmentManager().beginTransaction();
+        fTransaction.add(R.id.main_fragment, CategoryItem.newInstance(), "CategoryItem");
+        fTransaction.addToBackStack(null);
+        fTransaction.commit();
     }
 
     private void initData() {
         mViewModel.getCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories.size() == 0)
-                binding.categoryNoItems.setVisibility(View.VISIBLE);
+                binding.catergoryNoItems.setVisibility(View.VISIBLE);
             else
-                binding.categoryNoItems.setVisibility(View.GONE);
+                binding.catergoryNoItems.setVisibility(View.GONE);
 
 
             adapter.addAll(categories);

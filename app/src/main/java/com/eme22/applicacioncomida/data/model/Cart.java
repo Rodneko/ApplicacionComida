@@ -1,7 +1,5 @@
 package com.eme22.applicacioncomida.data.model;
 
-import com.eme22.applicacioncomida.data.model.CartItem;
-import com.eme22.applicacioncomida.data.model.User;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -29,10 +27,9 @@ public final class Cart {
     private boolean finished;
     @SerializedName("createdAt")
     @Expose
-    @NotNull
     private String createdAt;
 
-    public Cart(long id, @NotNull User user, long userId, ArrayList<CartItem> cartItems, boolean finished, @NotNull String createdAt) {
+    public Cart(long id, @NotNull User user, long userId, ArrayList<CartItem> cartItems, boolean finished, String createdAt) {
         this.id = id;
         this.user = user;
         this.userId = userId;

@@ -28,4 +28,14 @@
     <string name="no_items">No Hay Items Disponibles</string>
     <string name="delivery_pay">Pago a domicilio</string>
     <string name="card_pay">Pago con Tarjeta</string>
+    <string name="currency">S/. </string>
+    <string name="items">Items</string>
+    <string name="categories">Categorias</string>
+    <string name="promos">Promociones</string>
+    <string name="users">Usuarios</string>
+
+    <string-array name="boolean_array">
+        <item>Verdadero</item>
+        <item>Falso</item>
+    </string-array>
 </resources>

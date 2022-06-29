@@ -20,9 +20,13 @@ public class CategoryViewModel extends ViewModel {
 
     private final WebApiService service = WebApiAdapter.getApiService();
 
+    private final MutableLiveData<Category> selected = new MutableLiveData<>();
+
     LiveData<ArrayList<Category>> getCategories() {
         return categories;
     }
+
+    public LiveData<Category> getSelected() {return selected;}
 
     public void  retrieveCategories() {
         Call<ArrayList<Category>> promoResponse = service.categories();
@@ -41,6 +45,10 @@ public class CategoryViewModel extends ViewModel {
             }
         });
 
+    }
+
+    public void setSelected(Category item) {
+        selected.setValue(item);
     }
 
 }

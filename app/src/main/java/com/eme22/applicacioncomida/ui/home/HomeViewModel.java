@@ -8,6 +8,7 @@ import com.eme22.applicacioncomida.data.api.WebApiAdapter;
 import com.eme22.applicacioncomida.data.api.WebApiService;
 import com.eme22.applicacioncomida.data.model.Category;
 import com.eme22.applicacioncomida.data.model.Promo;
+import com.eme22.applicacioncomida.data.model.SearchResult;
 
 import java.util.ArrayList;
 
@@ -19,7 +20,6 @@ public class HomeViewModel extends ViewModel {
 
     private final MutableLiveData<ArrayList<Category>> categories = new MutableLiveData<>();
 
-
     private final MutableLiveData<ArrayList<Promo>> promos = new MutableLiveData<>();
 
     private final WebApiService service = WebApiAdapter.getApiService();
@@ -30,6 +30,12 @@ public class HomeViewModel extends ViewModel {
 
     LiveData<ArrayList<Promo>> getPromos() {
         return promos;
+    }
+
+    private final MutableLiveData<ArrayList<SearchResult>> search = new MutableLiveData<>();
+
+    LiveData<ArrayList<SearchResult>> getSearch() {
+        return search;
     }
 
     public void retrievePromos() {
@@ -68,5 +74,21 @@ public class HomeViewModel extends ViewModel {
             }
         });
 
+    }
+
+    public void retrieveSearch(String query) {
+        service.search(query).enqueue(new Callback<ArrayList<SearchResult>>() {
+            @Override
+            public void onResponse(Call<ArrayList<SearchResult>> call, Response<ArrayList<SearchResult>> response) {
+                if (response.isSuccessful()) {
+                    search.setValue(response.body());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ArrayList<SearchResult>>call, Throwable t) {
+
+            }
+        });
     }
 }

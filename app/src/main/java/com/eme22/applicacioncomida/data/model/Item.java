@@ -28,6 +28,8 @@ public final class Item {
     @Expose
     @Nullable
     private Long promoId;
+    @Nullable
+    private Promo promo;
     @SerializedName("image")
     @Expose
     @Nullable
@@ -46,6 +48,10 @@ public final class Item {
         this.promoId = promoId;
         this.image = image;
         this.createdAt = createdAt;
+    }
+
+    public Item() {
+
     }
 
     public long getId() {
@@ -84,5 +90,45 @@ public final class Item {
     @Nullable
     public String getCreatedAt() {
         return createdAt;
+    }
+    @Nullable
+    public Promo getPromo() {
+        return promo;
+    }
+
+    public void setPromo(@androidx.annotation.Nullable Promo promo) {
+        this.promo = promo;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setCategoryId(long categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public void setName(@Nullable String name) {
+        this.name = name;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
+    }
+
+    public void setPrice(@Nullable Double price) {
+        this.price = price;
+    }
+
+    public void setPromoId(@Nullable Long promoId) {
+        this.promoId = promoId;
+    }
+
+    public void setImage(@Nullable String image) {
+        this.image = image;
+    }
+
+    public void setCreatedAt(@Nullable String createdAt) {
+        this.createdAt = createdAt;
     }
 }

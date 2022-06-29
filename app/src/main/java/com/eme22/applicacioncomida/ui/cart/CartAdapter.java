@@ -6,16 +6,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
 import com.eme22.applicacioncomida.R;
 import com.eme22.applicacioncomida.data.model.CartItem;
 import com.squareup.picasso.Picasso;
 
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +27,8 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartItemViewHo
 
     private final OnItemClicked listener;
     protected ArrayList<CartItem> mItemList;
+
+    private static final DecimalFormat df = new DecimalFormat("0.00");
 
     public void addAll(List< CartItem > mcList) {
         for (CartItem mc: mcList) {
@@ -71,7 +77,14 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartItemViewHo
 
         CartItem item = getItem(position);
 
-        Picasso.get().load(getItemImage(API_URL, (int) item.getItemId())).into(holder.image);
+        CircularProgressDrawable circularProgressDrawable = new CircularProgressDrawable(holder.image.getContext());
+        circularProgressDrawable.setStrokeWidth(5f);
+        circularProgressDrawable.setCenterRadius(30f);
+        circularProgressDrawable.start();
+        Picasso.get().load(API_URL + item.getItem().getImage()).placeholder(circularProgressDrawable).into(holder.image);
+        holder.title.setText(item.getItem().getName());
+        holder.count.setText(MessageFormat.format("Items: {0}", Math.toIntExact(item.getCount())));
+        holder.price.setText(MessageFormat.format("{0} {1}", holder.price.getContext().getString(R.string.currency), df.format(item.getItem().getPrice())));
 
     }
     @Override
@@ -79,18 +92,13 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartItemViewHo
         return (null != mItemList ? mItemList.size() : 0);
     }
 
-    private String getItemImage(String apiUrl, Integer itemId){
-        return "";
-    }
-
     protected class CartItemViewHolder extends RecyclerView.ViewHolder {
 
         ImageView image = itemView.findViewById(R.id.cartItemImage);
         TextView title = itemView.findViewById(R.id.cartItemName);
-        TextView description  = itemView.findViewById(R.id.cartItemDescription);
-        TextView price   = itemView.findViewById(R.id.cartItemDescription);
+        TextView price   = itemView.findViewById(R.id.cartItemPrice);
         TextView count  = itemView.findViewById(R.id.cartItemCount);
-        Button delete =  itemView.findViewById(R.id.cartItemDelete);
+        ImageButton delete =  itemView.findViewById(R.id.cartItemDelete);
 
 
         public CartItemViewHolder(@NonNull View itemView) {

@@ -189,18 +189,15 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     ActivityResultLauncher<Intent> startActivityIntent = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    if (result.getResultCode() == Activity.RESULT_OK && null != result) {
-                        String selectedImage = null;
-                        try {
-                            selectedImage = getRealPathFromURI(RegisterActivity.this, result.getData().getData());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        image2 = new File(selectedImage);
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && null != result) {
+                    String selectedImage = null;
+                    try {
+                        selectedImage = getRealPathFromURI(RegisterActivity.this, result.getData().getData());
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+                    image2 = new File(selectedImage);
                 }
             });
 

@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
 import com.eme22.applicacioncomida.R;
 import com.eme22.applicacioncomida.data.model.Category;
@@ -69,7 +70,11 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     public void onBindViewHolder(@NonNull CategoryAdapter.CategoryItemViewHolder holder, int position) {
         Category item = getItem(position);
         holder.title.setText(item.getName());
-        Picasso.get().load(API_URL + item.getImage()).into(holder.image);
+        CircularProgressDrawable circularProgressDrawable = new CircularProgressDrawable(holder.image.getContext());
+        circularProgressDrawable.setStrokeWidth(5f);
+        circularProgressDrawable.setCenterRadius(30f);
+        circularProgressDrawable.start();
+        Picasso.get().load(API_URL + item.getImage()).placeholder(circularProgressDrawable).into(holder.image);
     }
 
     @Override
