@@ -47,7 +47,7 @@ public class RegisterViewModel extends ViewModel {
             public void onResponse(Call<Login> call, Response<Login> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().getCount() != null) {
                     int count = response.body().getCount();
-                    Call<User> response2 =  service.uploadUser(name, lastName, username, toBase64(password), address, phone, count == 0,
+                    Call<User> response2 =  service.uploadUser(name, lastName, username, password, address, phone, count == 0,
                             file == null ? null : MultipartBody.Part.createFormData("data", file.getName(),
                                     RequestBody.create(file, MediaType.parse("image/*"))
                             ));
@@ -75,14 +75,6 @@ public class RegisterViewModel extends ViewModel {
 
             }
         });
-    }
-
-    private String toBase64(String password) {
-        return new String(
-                android.util.Base64.encode(password.getBytes(), android.util.Base64.DEFAULT),
-                StandardCharsets.UTF_8
-        );
-
     }
 
     public void loginDataChanged(String name, String lastName, String address, String phone, String username,String password) {

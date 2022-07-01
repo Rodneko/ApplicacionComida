@@ -39,7 +39,7 @@ public class LoginViewModel extends ViewModel {
 
     public void login(String username, String password) {
         // can be launched in a separate asynchronous job
-        Call<User> result = service.getLogin(username, toBase64(password));
+        Call<User> result = service.getLogin(username, password);
 
         result.enqueue(new Callback<User>() {
             @Override
@@ -143,12 +143,5 @@ public class LoginViewModel extends ViewModel {
     // A placeholder password validation check
     private boolean isPasswordValid(String password) {
         return password != null && password.trim().length() > 5;
-    }
-
-    private String toBase64(String string) {
-        return new String(
-                android.util.Base64.encode(string.getBytes(), android.util.Base64.DEFAULT),
-                StandardCharsets.UTF_8
-        );
     }
 }

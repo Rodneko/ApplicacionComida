@@ -5,19 +5,32 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.eme22.applicacioncomida.R;
 import com.eme22.applicacioncomida.databinding.ActivityPagoBinding;
+import com.eme22.applicacioncomida.ui.bought.BoughtFragment;
+import com.eme22.applicacioncomida.ui.register.RegisterViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -36,12 +49,38 @@ import com.google.android.libraries.places.api.model.PlaceLikelihood;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.synap.pay.SynapPayButton;
+import com.synap.pay.handler.EventHandler;
+import com.synap.pay.handler.payment.SynapAuthorizeHandler;
+import com.synap.pay.model.payment.SynapAddress;
+import com.synap.pay.model.payment.SynapCardStorage;
+import com.synap.pay.model.payment.SynapCountry;
+import com.synap.pay.model.payment.SynapCurrency;
+import com.synap.pay.model.payment.SynapDocument;
+import com.synap.pay.model.payment.SynapExpiration;
+import com.synap.pay.model.payment.SynapFeatures;
+import com.synap.pay.model.payment.SynapMetadata;
+import com.synap.pay.model.payment.SynapOrder;
+import com.synap.pay.model.payment.SynapPayment;
+import com.synap.pay.model.payment.SynapPaymentCode;
+import com.synap.pay.model.payment.SynapPerson;
+import com.synap.pay.model.payment.SynapProduct;
+import com.synap.pay.model.payment.SynapSettings;
+import com.synap.pay.model.payment.SynapTransaction;
+import com.synap.pay.model.payment.response.SynapAuthorizeResponse;
+import com.synap.pay.model.security.SynapAuthenticator;
+import com.synap.pay.theming.SynapLightTheme;
+import com.synap.pay.theming.SynapTheme;
 
+import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class PagoActivity extends AppCompatActivity implements OnMapReadyCallback {
 
+    PagoActivityViewModel mViewModel;
     private ActivityPagoBinding binding;
 
     private static final String TAG = PagoActivity.class.getSimpleName();
@@ -78,49 +117,37 @@ public class PagoActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List[] likelyPlaceAttributions;
     private LatLng[] likelyPlaceLatLngs;
     private boolean canceled = false;
+    private SynapPayButton paymentWidget;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-// [START_EXCLUDE silent]
-        // [START maps_current_place_on_create_save_instance_state]
-        // Retrieve location and camera position from saved instance state.
+
         if (savedInstanceState != null) {
             lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
             cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
-        // [END maps_current_place_on_create_save_instance_state]
-        // [END_EXCLUDE]
+
+
 
         // Retrieve the content view that renders the map.
         binding = ActivityPagoBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
 
-        binding.payCard.setOnClickListener(v -> {
-            binding.payDelivery.setChecked(false);
-            binding.payCardLayout.setVisibility(View.VISIBLE);
-            binding.payDeliveryLayout.setVisibility(View.GONE);
-        });
+        initView();
+        initData();
 
-        binding.payDelivery.setOnClickListener(v -> {
-            binding.payCard.setChecked(false);
-            binding.payCardLayout.setVisibility(View.GONE);
-            binding.payDeliveryLayout.setVisibility(View.VISIBLE);
-        });
-
-        binding.payDeliveryAccept.setOnClickListener(v -> binding.payDeliveryLayout.setVisibility(View.GONE));
-
-        binding.payCardAccept.setOnClickListener(v -> binding.payCardLayout.setVisibility(View.GONE));
-
-        binding.activityPagoAccept.setOnClickListener(v -> {
-            setResult(666);
-            finish();
-        });
-
-        binding.activityPagoCancel.setOnClickListener(v -> onBackPressed());
 
 
         setContentView(view);
+
+
+    }
+
+    private void initData() {
+
+        mViewModel = new ViewModelProvider(this)
+                .get(PagoActivityViewModel.class);
 
         // [START_EXCLUDE silent]
         // Construct a PlacesClient
@@ -137,6 +164,94 @@ public class PagoActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
         // [END maps_current_place_map_fragment]
         // [END_EXCLUDE]
+
+        mViewModel.getPayFormState().observe(this, pagoActivityFormState -> {
+            if (pagoActivityFormState == null) return;
+
+            binding.activityPagoAccept.setEnabled(pagoActivityFormState.isDataValid());
+
+            if (pagoActivityFormState.getDeliveryPaymentError() != null) {
+                 binding.payDeliveryAmount.setError(getString(pagoActivityFormState.getDeliveryPaymentError()));
+            }
+
+        });
+
+        mViewModel.getPayDeliveryAccepted().observe(this, aBoolean -> binding.activityPagoAccept.setEnabled(aBoolean));
+
+    }
+
+    private void initView() {
+        binding.payCard.setOnClickListener(v -> {
+            binding.payDelivery.setChecked(false);
+            binding.payDeliveryLayout.setVisibility(View.GONE);
+            binding.synapForm.setVisibility(View.VISIBLE);
+            mViewModel.setPayDelivery(true);
+        });
+
+        binding.payDelivery.setOnClickListener(v -> {
+
+            binding.synapForm.setVisibility(View.GONE);
+
+            if (mViewModel.getPayDeliveryAccepted().getValue()) {
+                if (binding.payCard.isChecked()) {
+                    mViewModel.setPayDelivery(false);
+                    binding.payDeliveryAmount.setText("");
+                } else {
+                    return;
+                }
+
+            }
+
+            binding.payCard.setChecked(false);
+
+            binding.payDeliveryLayout.setVisibility(View.VISIBLE);
+
+        });
+
+        binding.payDeliveryAccept.setOnClickListener(v -> {
+                    binding.payDeliveryLayout.setVisibility(View.GONE);
+                    mViewModel.setPayDelivery(true);
+        });
+
+        binding.activityPagoAccept.setOnClickListener(v -> {
+
+            if (binding.payCard.isChecked()) {
+                paymentWidget.pay();
+            }
+            else {
+                showSuccessPayment();
+            }
+        });
+
+        binding.activityPagoCancel.setOnClickListener(v -> onBackPressed());
+
+        binding.payDeliveryAmount.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                mViewModel.onPayDeliveryChanged(
+                        binding.payDeliveryAmount.getText().toString());
+            }
+        });
+
+        binding.payDeliveryAmount.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE && binding.activityPagoAccept.isEnabled()) {
+                mViewModel.onPayDeliveryChanged(
+                        binding.payDeliveryAmount.getText().toString());
+            }
+            return false;
+        });
+
+        startPayment();
     }
 
     public void onCancel() {
@@ -511,4 +626,300 @@ public class PagoActivity extends AppCompatActivity implements OnMapReadyCallbac
             ex.printStackTrace();
         }
     }
+
+    private void startPayment(){
+
+        // Crea el objeto del widget de pago
+        this.paymentWidget=SynapPayButton.create(binding.synapForm);
+
+        // Tema de fondo en la tarjeta (Light o Dark)
+        SynapTheme theme = new SynapLightTheme(); // Fondo Light con controles dark
+        //SynapTheme theme = new SynapDarkTheme(); // Fondo Dark con controles light
+        SynapPayButton.setTheme(theme);
+
+        // Seteo del ambiente ".SANDBOX" o ".PRODUCTION"
+        SynapPayButton.setEnvironment(SynapPayButton.Environment.SANDBOX);
+
+        // Seteo de los campos de transacción
+        SynapTransaction transaction=this.buildTransaction();
+
+        // Seteo de los campos de autenticación de seguridad
+        SynapAuthenticator authenticator=this.buildAuthenticator(transaction);
+
+        // Control de eventos en el formulario de pago
+        SynapPayButton.setListener(event -> {
+            Button paymentButton;
+            switch (event){
+                case START_PAY:
+                    paymentButton=findViewById(R.id.activity_pago_accept);
+                    paymentButton.setVisibility(View.GONE);
+                    break;
+                case INVALID_CARD_FORM:
+                    paymentButton=findViewById(R.id.activity_pago_accept);
+                    paymentButton.setVisibility(View.VISIBLE);
+                    break;
+                case VALID_CARD_FORM:
+                    break;
+            }
+        });
+
+        this.paymentWidget.configure(
+                // Seteo de autenticación de seguridad y transacción
+                authenticator,
+                transaction,
+
+                // Manejo de la respuesta
+                new SynapAuthorizeHandler() {
+                    @Override
+                    public void success(SynapAuthorizeResponse response) {
+                        Looper.prepare();
+                        boolean resultAccepted=response.getResult().getAccepted();
+                        String resultMessage=response.getResult().getMessage();
+                        if (resultAccepted) {
+                            showSuccessPayment();
+                        }
+                        else {
+                            showMessage(resultMessage);
+                        }
+                        Looper.loop();
+                    }
+                    @Override
+                    public void failed(SynapAuthorizeResponse response) {
+
+                        System.out.println(response.getMessage().getText());
+
+                        if (Objects.equals(response.getMessage().getText(), "httpError_503")) {
+                            showSuccessPayment();
+                            return;
+                        }
+
+                        Looper.prepare();
+                        String messageText=response.getMessage().getText();
+                        showMessage(messageText);
+                        Looper.loop();
+                    }
+                }
+        );
+    }
+
+    public void showSuccessPayment(View view) {
+        showSuccessPayment();
+    }
+
+    private void showSuccessPayment() {
+        binding.imageButton2.setOnClickListener(v -> {
+
+            if (binding.payDelivery.isChecked())
+                setResult(777);
+            else
+                setResult(666);
+
+            finish();
+        });
+
+        Handler looper = new Handler(getApplicationContext().getMainLooper());
+        looper.post(() -> {
+            binding.showFinish.setVisibility(View.VISIBLE);
+            binding.activityPagoContent.setVisibility(View.GONE);
+        });
+
+    }
+
+    private SynapTransaction buildTransaction(){
+        // Genere el número de orden, este es solo un ejemplo
+        String number=String.valueOf(System.currentTimeMillis());
+
+        // Seteo de los datos de transacción
+        // Referencie al objeto país
+        SynapCountry country=new SynapCountry();
+        // Seteo del código de país
+        country.setCode("PER");
+
+        // Referencie al objeto moneda
+        SynapCurrency currency=new SynapCurrency();
+        // Seteo del código de moneda
+        currency.setCode("PEN");
+
+        //Seteo del monto
+        String amount="1.00";
+
+        // Referencie al objeto cliente
+        SynapPerson customer=new SynapPerson();
+        // Seteo del cliente
+        customer.setName("Javier");
+        customer.setLastName("Pérez");
+
+        // Referencie al objeto dirección del cliente
+        SynapAddress address=new SynapAddress();
+        // Seteo del pais (country), niveles de ubicación geográfica (levels), dirección (line1 y line2) y código postal (zip)
+        address.setCountry("PER");
+        address.setLevels(new ArrayList<String>());
+        address.getLevels().add("150000");
+        address.getLevels().add("150100");
+        address.getLevels().add("150101");
+        address.setLine1("Ca Carlos Ferreyros 180");
+        address.setZip("15036");
+        customer.setAddress(address);
+
+        // Seteo del email y teléfono
+        customer.setEmail("javier.perez@synapsolutions.com");
+        customer.setPhone("999888777");
+
+        // Referencie al objeto documento del cliente
+        SynapDocument document=new SynapDocument();
+        // Seteo del tipo y número de documento
+        document.setType("DNI");
+        document.setNumber("44556677");
+        customer.setDocument(document);
+
+        // Seteo de los datos de envío
+        SynapPerson shipping=customer;
+        // Seteo de los datos de facturación
+        SynapPerson billing=customer;
+
+        // Referencie al objeto producto
+        SynapProduct productItem=new SynapProduct();
+        // Seteo de los datos de producto
+        productItem.setCode("123");
+        productItem.setName("Llavero");
+        productItem.setQuantity("1");
+        productItem.setUnitAmount("1.00");
+        productItem.setAmount("1.00");
+
+        // Referencie al objeto lista de producto
+        List<SynapProduct> products=new ArrayList<>();
+        // Seteo de los datos de lista de producto
+        products.add(productItem);
+
+        // Referencie al objeto metadata
+        SynapMetadata metadataItem=new SynapMetadata();
+        // Seteo de los datos de metadata
+        metadataItem.setName("nombre1");
+        metadataItem.setValue("valor1");
+
+        // Referencie al objeto lista de metadata
+        List<SynapMetadata> metadataList=new ArrayList<>();
+        // Seteo de los datos de lista de metadata
+        metadataList.add(metadataItem);
+
+        // Referencie al objeto orden
+        SynapOrder order=new SynapOrder();
+        // Seteo de los datos de orden
+        order.setNumber(number);
+        order.setAmount(amount);
+        order.setCountry(country);
+        order.setCurrency(currency);
+        order.setProducts(products);
+        order.setCustomer(customer);
+        order.setShipping(shipping);
+        order.setBilling(billing);
+        order.setMetadata(metadataList);
+
+        // Referencie al objeto configuración
+        SynapSettings settings=new SynapSettings();
+        // Seteo de los datos de configuración
+        settings.setBrands(Arrays.asList(new String[]{"VISA","MSCD","AMEX","DINC"}));
+        settings.setLanguage("es_PE");
+        settings.setBusinessService("MOB");
+
+        // Referencie al objeto transacción
+        SynapTransaction transaction=new SynapTransaction();
+        // Seteo de los datos de transacción
+        transaction.setOrder(order);
+        transaction.setSettings(settings);
+
+        // Feature Card-Storage (Recordar Tarjeta)
+        SynapFeatures features=new SynapFeatures();
+        SynapCardStorage cardStorage=new SynapCardStorage();
+
+        // Omitir setUserIdentifier, si se trata de usuario anónimo
+        cardStorage.setUserIdentifier("javier.perez@synapsolutions.com");
+
+        features.setCardStorage(cardStorage);
+        transaction.setFeatures(features);
+
+        return transaction;
+    }
+
+    private SynapAuthenticator buildAuthenticator(SynapTransaction transaction){
+        String apiKey="ab254a10-ddc2-4d84-8f31-d3fab9d49520";
+
+        // La signatureKey y la función de generación de firma debe usarse e implementarse en el servidor del comercio utilizando la función criptográfica SHA-512
+        // solo con propósito de demostrar la funcionalidad, se implementará en el ejemplo
+        // (bajo ninguna circunstancia debe exponerse la signatureKey y la función de firma desde la aplicación porque compromete la seguridad)
+        String signatureKey="eDpehY%YPYgsoludCSZhu*WLdmKBWfAo";
+
+        String signature=generateSignature(transaction,apiKey,signatureKey);
+
+        // El campo onBehalf es opcional y se usa cuando un comercio agrupa otros sub comercios
+        // la conexión con cada sub comercio se realiza con las credenciales del comercio agrupador
+        // y enviando el identificador del sub comercio en el campo onBehalf
+        //String onBehalf="cf747220-b471-4439-9130-d086d4ca83d4";
+
+        // Referencie el objeto de autenticación
+        SynapAuthenticator authenticator=new SynapAuthenticator();
+
+        // Seteo de identificador del comercio (apiKey)
+        authenticator.setIdentifier(apiKey);
+
+        // Seteo de firma, que permite verificar la integridad de la transacción
+        authenticator.setSignature(signature);
+
+        // Seteo de identificador de sub comercio (solo si es un subcomercio)
+        //authenticator.setOnBehalf(onBehalf);
+
+        return authenticator;
+    }
+
+    // Muestra el mensaje de respuesta
+    private void showMessage(String message){
+        AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+        builder1.setMessage(message);
+        builder1.setCancelable(true);
+
+        builder1.setPositiveButton(
+                "OK",
+                new DialogInterface.OnClickListener(){
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Finaliza el intento de pago y regresa al inicio, el comercio define la experiencia del cliente
+                        Handler looper = new Handler(getApplicationContext().getMainLooper());
+                        looper.post(() -> {
+                        });
+                        dialog.cancel();
+                    }
+                }
+        );
+
+        AlertDialog alert11 = builder1.create();
+        alert11.show();
+    }
+
+    // La signatureKey y la función de generación de firma debe usarse e implementarse en el servidor del comercio utilizando la función criptográfica SHA-512
+// solo con propósito de demostrar la funcionalidad, se implementará en el ejemplo
+// (bajo ninguna circunstancia debe exponerse la signatureKey y la función de firma desde la aplicación porque compromete la seguridad)
+    private String generateSignature(SynapTransaction transaction, String apiKey, String signatureKey){
+        String orderNumber=transaction.getOrder().getNumber();
+        String currencyCode=transaction.getOrder().getCurrency().getCode();
+        String amount=transaction.getOrder().getAmount();
+
+        String rawSignature=apiKey+orderNumber+currencyCode+amount+signatureKey;
+        String signature=sha512Hex(rawSignature);
+        return signature;
+    }
+
+    private String sha512Hex(String value){
+        StringBuilder sb = new StringBuilder();
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            byte[] bytes = md.digest(value.getBytes("UTF-8"));
+            for (int i = 0; i < bytes.length; i++) {
+                sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
+    }
+
+
 }

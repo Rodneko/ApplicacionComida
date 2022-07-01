@@ -56,8 +56,7 @@ public class CartViewModel extends ViewModel {
                     if (cart != null) {
                         ArrayList<CartItem> cartItems = cart.getCartItems();
 
-                        if (cartItems.size() > 0)
-                            this.hasItems.postValue(true);
+                        this.hasItems.postValue(cartItems.size() > 0);
 
                         for (int i = 0; i < cartItems.size() ; i++) {
                             CartItem cartItem = cartItems.get(i);
@@ -135,6 +134,7 @@ public class CartViewModel extends ViewModel {
             items.remove(cartItem);
             cart1.setCartItems(items);
             cart.setValue(cart1);
+            hasItems.setValue(items.size() > 0);
         }
     }
 
@@ -158,6 +158,7 @@ public class CartViewModel extends ViewModel {
             @Override
             public void onResponse(Call<Cart> call, Response<Cart> response) {
                 if (response.isSuccessful()) {
+                    hasItems.setValue(false);
                     cart.setValue(createNewCart(null));
                 }
             }

@@ -5,9 +5,9 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -26,6 +26,7 @@ import com.eme22.applicacioncomida.data.model.Item;
 import com.eme22.applicacioncomida.data.model.Promo;
 import com.eme22.applicacioncomida.data.model.User;
 import com.eme22.applicacioncomida.databinding.FragmentCartBinding;
+import com.eme22.applicacioncomida.ui.bought.BoughtFragment;
 import com.eme22.applicacioncomida.ui.main.MainActivity;
 import com.eme22.applicacioncomida.ui.pago.PagoActivity;
 
@@ -52,6 +53,7 @@ public class CartFragment extends Fragment {
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == 666) {
                         mViewModel.submitCart();
+
                     }
                 }
             });
@@ -87,6 +89,7 @@ public class CartFragment extends Fragment {
                 precioAcc += (item.getPrice() - (item.getPrice() * (itemPromo != null ? itemPromo.getDiscount() : 0))) * cartItem.getCount();
             }
             binding.cartPriceText.setText(MessageFormat.format("{0} {1}", getString(R.string.currency), df.format(precioAcc)));
+            cartAdapter.clear();
             cartAdapter.addAll(items);
         });
 
@@ -110,7 +113,7 @@ public class CartFragment extends Fragment {
         mViewModel =  new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
         RecyclerView recycler = binding.cartRecyler;
-        cartAdapter = new CartAdapter( cart -> deleteCart(cart) );
+        cartAdapter = new CartAdapter(this::deleteCart);
         recycler.setAdapter(cartAdapter);
         binding.cartBuyButton.setOnClickListener(v -> buyCurrentCart());
     }

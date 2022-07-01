@@ -107,6 +107,8 @@ public class EditorFragment extends Fragment {
                                 @Override
                                 public void onSuccess() {
 
+                                    onDataChanged();
+
                                 }
 
                                 @Override

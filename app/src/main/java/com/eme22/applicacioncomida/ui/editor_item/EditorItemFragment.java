@@ -35,6 +35,7 @@ import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -188,7 +189,6 @@ public class EditorItemFragment extends Fragment {
                 else if ( CURRENT_EDITOR == USER_EDITOR) {
 
                     User itemToSend = item instanceof User ? (User) item : new User();
-                    System.out.println(itemToSend.getId());
                     itemToSend.setId(itemToSend.getId());
                     itemToSend.setFirstName(binding.fragmentEditorProperty1.getText().toString());
                     itemToSend.setLastName(binding.fragmentEditorProperty2.getText().toString());
@@ -196,8 +196,10 @@ public class EditorItemFragment extends Fragment {
                     itemToSend.setPhone(Long.valueOf(binding.fragmentEditorProperty4.getText().toString()));
                     itemToSend.setEmail(binding.fragmentEditorProperty5.getText().toString());
                     if (!binding.fragmentEditorProperty6.getText().toString().isEmpty()) {
-                        itemToSend.setPasswordHash(toBase64(binding.fragmentEditorProperty6.getText().toString()));
+                        itemToSend.setPasswordHash(binding.fragmentEditorProperty6.getText().toString());
                     }
+
+                    System.out.println(binding.fragmentEditorProperty7.getSelectedItemPosition() == 0);
 
                     itemToSend.setAdmin(binding.fragmentEditorProperty7.getSelectedItemPosition() == 0);
 
@@ -414,7 +416,7 @@ public class EditorItemFragment extends Fragment {
                 binding.fragmentEditorProperty5.setText(((User) item).getEmail());
 
             binding.fragmentEditorText6.setText("Contraseña: ");
-            binding.fragmentEditorProperty6.setText("");
+            binding.fragmentEditorProperty6.setText(((User) item).getPasswordHash());
 
             binding.fragmentEditorText7.setText("Admin: ");
 
@@ -723,13 +725,5 @@ public class EditorItemFragment extends Fragment {
         while ((length = source.read(buf)) > 0) {
             target.write(buf, 0, length);
         }
-    }
-
-    private String toBase64(String password) {
-        return new String(
-                android.util.Base64.encode(password.getBytes(), android.util.Base64.DEFAULT),
-                StandardCharsets.UTF_8
-        );
-
     }
 }
